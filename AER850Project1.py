@@ -277,7 +277,3 @@ X_new = np.array([
 
 pred = clf.predict(X_new)
 print("Predicted Steps:", pred.tolist())
-
-
-
-
