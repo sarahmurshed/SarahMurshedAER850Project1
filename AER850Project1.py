@@ -13,36 +13,35 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from scipy.stats import loguniform, randint
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, classification_report, ConfusionMatrixDisplay
-import warnings
-from sklearn.exceptions import ConvergenceWarning
-warnings.filterwarnings("ignore", category=ConvergenceWarning)
-warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
-
+#import warnings
+#from sklearn.exceptions import ConvergenceWarning
+#warnings.filterwarnings("ignore", category=ConvergenceWarning)
+#warnings.filterwarnings("ignore", category=FutureWarning)
+#warnings.filterwarnings("ignore", category=UserWarning)
 from sklearn.ensemble import StackingClassifier
 from sklearn.metrics import accuracy_score, classification_report, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
 from joblib import dump, load
 
-#STEP 1
-file_path = "Project1Data.csv" #File located in the same folder
+#STEP 1- Data Processing
+file_path = "Project1Data.csv" 
 data = pd.read_csv(file_path)
 X = data[["X","Y","Z"]].to_numpy()
 y = data["Step"].to_numpy()
 
-
+print("Step[1]:")
 print("Shape of the dataset:", data.shape)
 print("\nColumn names:", data.columns.tolist())
 print("\nFirst 5 rows of the dataset:")
 print(data.head())
 
-#STEP 2
-#STEP 2.1
-print("\n[2.1] Overall descriptive statistics")
+#STEP 2- Data Visualization 
+#STEP 2.1- Overall Descriptive statistics
+print("\nStep[2.1] Overall descriptive statistics")
 print(data.describe().T)
 
-#STEP 2.2
-print("\n[2.2] Per-step stats for X, Y, Z")
+#STEP 2.2- Statistical Analysis of coordinate Data
+print("\nStep[2.2]: Per-step stats for X, Y, Z")
 per_step = (
     data.groupby("Step")[["X","Y","Z"]]
         .agg(["count","mean","std","min","max"])
@@ -52,7 +51,7 @@ print("\nX stats by Step:\n", per_step["X"])
 print("\nY stats by Step:\n", per_step["Y"])
 print("\nZ stats by Step:\n", per_step["Z"])
 
-#STEP 2.3
+#STEP 2.3- Class Distribution by Step Graph
 (unique, counts) = np.unique(y, return_counts=True)
 plt.bar(unique, counts, color="steelblue")
 plt.title("Class distribution by Step")
@@ -60,8 +59,8 @@ plt.xlabel("Step")
 plt.ylabel("Count")
 plt.show()
 
-#STEP 2.4
-print("\nSTEP 2.4 – Plots: Boxplots of X, Y, Z by Step")
+#STEP 2.4- Boxplots Distribution Comparison
+print("\nStep[2.4]: Plots: Boxplots of X, Y, Z by Step")
 
 plt.figure()
 data.boxplot(column="X", by="Step")
@@ -90,12 +89,9 @@ plt.ylabel("Z")
 plt.tight_layout()
 plt.show()
 
-scatter_matrix(data[["X","Y","Z"]], figsize=(7,7))
-plt.suptitle("Scatter matrix (X,Y,Z)"); plt.show()
-
-# 2.6 Per-step centroids and 3D plot
+#STEP 2.5- Per-step centroids and 3D plot
 centroids = data.groupby("Step")[["X","Y","Z"]].mean().round(4)
-print("\n[2.6] Per-step centroids (mean X,Y,Z)")
+print("\nStep [2.5] Per-step centroids (mean X,Y,Z)")
 print(centroids)
 
 fig = plt.figure()
@@ -103,40 +99,43 @@ ax = fig.add_subplot(111, projection="3d")
 ax.scatter(centroids["X"], centroids["Y"], centroids["Z"])
 for step, row in centroids.iterrows():
     ax.text(row["X"], row["Y"], row["Z"], str(step))
-ax.set_title("3D scatter of per-step centroids")
+ax.set_title("3D Scatter of Per-Step Centroids")
 ax.set_xlabel("X"); ax.set_ylabel("Y"); ax.set_zlabel("Z")
 plt.tight_layout(); plt.show()
 
-# 3.1: correlation matrix (Pearson)
+#STEP 3- Correction Analysis
+# STEP 3.1- Correlation Matrix (Pearson)
+print("\nStep [3.1] Correalation Matrix:\n")
 corr = data[["X","Y","Z","Step"]].corr(method="pearson")
 print(corr)
 
 plt.figure(figsize=(6,5))
 sns.heatmap(corr, annot=True, fmt=".2f", vmin=-1, vmax=1, cmap="coolwarm")
-plt.title("Pearson Correlation Matrix (X, Y, Z, Step)")
+plt.title("Pearson Correlation Heatmap (X, Y, Z, Step)")
 plt.tight_layout()
 plt.show()
 
-# 3.2: feature ↔ target correlations only
+# STEP 3.2- feature ↔ target correlations only
 ft = corr["Step"].drop("Step").sort_values(ascending=False)
-print("\nCorrelation with Step:\n", ft)
+print("\nStep [3.2] Correlation with Step:\n", ft)
 
 plt.figure(figsize=(5,3))
 sns.barplot(x=ft.index, y=ft.values)
-plt.title("Feature–Target Correlation (Pearson)")
-plt.ylabel("corr(feature, Step)")
+plt.title("Pearson Correlation Bar Graph")
+plt.ylabel("Correlation of Feature and  Step")
+plt.xlabel("Feature")
 plt.tight_layout()
 plt.show()
 
-#Step 4
-# 4.1 Stratified split
+#STEP 4- Classification Model Development 
+# STEP 4.1 Stratified split
 
 Xtr, Xte, ytr, yte = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42
 )
 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
-# 4.2 Define models + grids
+# STEP 4.2 Define models + grids
 # A) SVM (RBF)
 svm_pipe = Pipeline([("scaler", StandardScaler()), ("clf", SVC())])
 svm_grid = {
@@ -166,7 +165,7 @@ log_grid = {
     "clf__class_weight": [None, "balanced"],
 }
 
-# 4.3 Grid searches
+# STEP 4.3 Grid searches
 svm_cv = GridSearchCV(svm_pipe, svm_grid, cv=cv, n_jobs=-1, scoring="accuracy")
 rf_cv  = GridSearchCV(rf, rf_grid, cv=cv, n_jobs=-1, scoring="accuracy")
 log_cv = GridSearchCV(log_pipe, log_grid, cv=cv, n_jobs=-1, scoring="accuracy")
@@ -181,7 +180,7 @@ for name, gs in [("SVM", svm_cv), ("RF", rf_cv), ("LOG", log_cv)]:
 
 print(classification_report(yte, yhat, digits=3))
 
-# 4.4 RandomizedSearchCV (example on SVM; widen ranges)
+# 4.4 RandomizedSearchCV 
 svm_rand = RandomizedSearchCV(
     Pipeline([("scaler", StandardScaler()), ("clf", SVC())]),
     {
@@ -239,8 +238,8 @@ log_best = log_cv.best_estimator_
 
 stack = StackingClassifier(
     estimators=[("svm", svm_best), ("rf", rf_best)],
-    final_estimator=log_best.named_steps["clf"],   # reuse tuned LR as meta
-    passthrough=False,                              # meta sees base preds only
+    final_estimator=log_best.named_steps["clf"],   
+    passthrough=False,                             
     n_jobs=-1
 )
 
@@ -257,8 +256,8 @@ plt.tight_layout(); plt.show()
 
 # ------- Step 7: Save + Predict -------
 
-final_model = svm_rand.best_estimator_      # if you used RandomizedSearchCV
-# final_model = svm_cv.best_estimator_      # if you used GridSearchCV
+final_model = svm_rand.best_estimator_     
+# final_model = svm_cv.best_estimator_      
 
 # 7.1 save
 dump(final_model, "final_model.joblib")
