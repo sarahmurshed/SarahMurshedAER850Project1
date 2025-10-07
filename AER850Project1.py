@@ -180,7 +180,7 @@ for name, gs in [("SVM", svm_cv), ("RF", rf_cv), ("LOG", log_cv)]:
 
 print(classification_report(yte, yhat, digits=3))
 
-# 4.4 RandomizedSearchCV 
+# STEP 4.4 RandomizedSearchCV 
 svm_rand = RandomizedSearchCV(
     Pipeline([("scaler", StandardScaler()), ("clf", SVC())]),
     {
@@ -198,7 +198,7 @@ print("SVM (Rand) — CV best score:", f"{svm_rand.best_score_:.3f}")
 print("SVM (Rand) — Test accuracy:", f"{accuracy_score(yte, yhat_r):.3f}")
 print("Confusion matrix:\n", confusion_matrix(yte, yhat_r))
 
-#Step 5
+#STEP 5- Model Performance Analysis 
 models = {
     "SVM": svm_cv.best_estimator_,
     "RF":  rf_cv.best_estimator_,
@@ -229,9 +229,8 @@ for name, model in models.items():
 
 eval_and_plot("SVM (Rand)", svm_rand.best_estimator_, Xte, yte)
 
-#Step 6:
+#STEP 6- Stacked Model Performance Analysis  
 
-# Use your tuned models from Step 4
 svm_best = svm_cv.best_estimator_        
 rf_best  = rf_cv.best_estimator_         
 log_best = log_cv.best_estimator_       
@@ -254,18 +253,14 @@ ConfusionMatrixDisplay.from_predictions(yte, yhat_stack, cmap="Blues", ax=ax, co
 ax.set_title("Stacked Model — Confusion Matrix")
 plt.tight_layout(); plt.show()
 
-# ------- Step 7: Save + Predict -------
+# STEP 7- Model Evaluation
 
 final_model = svm_rand.best_estimator_     
-# final_model = svm_cv.best_estimator_      
 
-# 7.1 save
 dump(final_model, "final_model.joblib")
 
-# 7.2 load (simulates using it later)
 clf = load("final_model.joblib")
 
-# 7.3 predict given coordinates
 X_new = np.array([
     [9.375, 3.0625, 1.51],
     [6.995, 5.125 , 0.3875],
@@ -276,3 +271,5 @@ X_new = np.array([
 
 pred = clf.predict(X_new)
 print("Predicted Steps:", pred.tolist())
+
+
